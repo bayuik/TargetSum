@@ -10,9 +10,11 @@ import {
 class Game extends React.Component {
     static propTypes = {
         randomNumberCount: PropTypes.number.isRequired,
+        initialSeconds: PropTypes.number.isRequired,
     };
     state = {
         selectedIds: [],
+        remainingSeconds: this.props.initialSeconds,
     };
     randomNumbers = Array
         .from({length: this.props.randomNumberCount})
@@ -20,6 +22,22 @@ class Game extends React.Component {
     target = this.randomNumbers
         .slice(0, this.props.randomNumberCount - 2)
         .reduce((acc, curr) => acc + curr, 0);
+
+    componentDidMount(){
+        this.intervalId = setInterval(() => {
+            this.setState(prevState => {
+                return {remainingSeconds: prevState.remainingSeconds - 1};
+            }, () => {
+                if(this.state.remainingSeconds === 0){
+                    clearInterval(this.intervalId);
+                }
+            });
+        }, 1000);
+    };
+
+    componentWillUnmount(){
+        clearInterval(this.intervalId);
+    }
 
     isNumberSelected = numberIndex => {
         return this.state.selectedIds.indexOf(numberIndex) >= 0;
@@ -35,7 +53,9 @@ class Game extends React.Component {
         const sumSelected = this.state.selectedIds.reduce((acc, curr) => {
             return acc + this.randomNumbers[curr];
         }, 0);
-        if(sumSelected < this.target){
+        if(this.state.remainingSeconds === 0){
+            return 'LOST';
+        }else if(sumSelected < this.target){
             return 'PLAYING';
         } else if(sumSelected === this.target){
             return 'WON';
@@ -43,6 +63,7 @@ class Game extends React.Component {
             return 'LOST';
         }
     }
+
 
     render(){
         const gameStatus = this.gameStatus();
@@ -60,7 +81,7 @@ class Game extends React.Component {
                     />
                     )}
                 </View>
-                <Text>{gameStatus}</Text>
+                <Text>{this.state.remainingSeconds}</Text>
             </View>
         )
     }
